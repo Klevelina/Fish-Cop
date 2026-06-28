@@ -33,7 +33,11 @@ jobs:
             TITLE="🧪 Manual Run"
           fi
 
-          MESSAGE=$(cat <<EOF $TITLE Repository: $REPO Author: $ACTOR Branch: $BRANCH Commit: $SHA EOF)
+          MESSAGE="$TITLE
+          Repository: $REPO
+          Author: $ACTOR
+          Branch: $BRANCH
+          Commit: $SHA"
 
           echo "message<<EOF" >> $GITHUB_OUTPUT
           echo "$MESSAGE" >> $GITHUB_OUTPUT
