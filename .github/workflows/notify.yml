@@ -1,0 +1,52 @@
+name: Discord Notifications
+
+on:
+  push:
+  pull_request:
+  release:
+  workflow_dispatch:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Build Discord message
+        id: msg
+        shell: bash
+        run: |
+          EVENT="${{ github.event_name }}"
+          REPO="${{ github.repository }}"
+          ACTOR="${{ github.actor }}"
+          BRANCH="${{ github.ref_name }}"
+          SHA="${GITHUB_SHA::7}"
+
+          TITLE="⚙️ GitHub Event"
+
+          if [ "$EVENT" = "push" ]; then
+            TITLE="📦 Push"
+          elif [ "$EVENT" = "pull_request" ]; then
+            TITLE="🔀 Pull Request"
+          elif [ "$EVENT" = "release" ]; then
+            TITLE="🚀 Release"
+          elif [ "$EVENT" = "workflow_dispatch" ]; then
+            TITLE="🧪 Manual Run"
+          fi
+
+          MESSAGE=$(cat <<EOF $TITLE Repository: $REPO Author: $ACTOR Branch: $BRANCH Commit: $SHA EOF)
+
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          echo "$MESSAGE" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Send Discord notification
+        shell: bash
+        run: |
+          CONTENT="${{ steps.msg.outputs.message }}"
+
+          # Escape for JSON safety
+          CONTENT=$(echo "$CONTENT" | jq -Rs .)
+
+          curl -H "Content-Type: application/json" \
+          -d "{\"content\": $CONTENT}" \
+          "${{ secrets.DISCORD_WEBHOOK }}"
